@@ -24,7 +24,7 @@ const navigate = useNavigate();
 
   const onsubmitHandler = async (event) => {
     event.preventDefault();
-
+console.log("hi");
 
     try {
 
@@ -37,7 +37,7 @@ const navigate = useNavigate();
         console.log('Response:', response);
         console.log('Response data:', response.data.token);
         if(response.data.success){
-          Cookies.set('uid', response.data.token, { expires: 7, path: '/',domain: 'localhost'  });
+          Cookies.set('token', response.data.token, { expires: 7, path: '/',domain: 'localhost'  });
           
           setCookieToken(Cookies.get('uid'));
           // console.log(Cookies.get('uid'));
@@ -83,7 +83,7 @@ const navigate = useNavigate();
           ? <p onClick={() => { setCurrentState('Sign Up'); }}>create account</p>
           : <p onClick={() => { setCurrentState('login'); }}>login here</p>}
       </div>
-      <button  className="bg-black text-white font-light px-8 py-2 mt-4">{currentState}</button>
+      <button type='Submit'  className="bg-black text-white font-light px-8 py-2 mt-4">{currentState}</button>
     </form>
   );
 }
