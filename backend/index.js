@@ -30,7 +30,7 @@ app.use(cors({
 }));
 
 // api endpoints 
-app.use("/user",router);
+app.use("/api/user",router);
 app.use("/api/product",productRouter);
 app.use("/api/cart",cartRouter);
 

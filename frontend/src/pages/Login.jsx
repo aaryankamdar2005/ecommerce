@@ -31,7 +31,7 @@ console.log("hi");
 
       if (currentState === 'signup') {
         const response = await axios.post(
-          backendurl+'/user/register',
+          backendurl+'/api/user/register',
           { name, email, password });
 
         console.log('Response:', response);
@@ -47,7 +47,7 @@ console.log("hi");
         }
       } else {
         // login 
-        const response = await axios.post(backendurl + '/user/login',{email,password});
+        const response = await axios.post(backendurl + '/api/user/login',{email,password});
         console.log('Response:', response);
         console.log('Response data:', response.data);
         if(response.data.success){
