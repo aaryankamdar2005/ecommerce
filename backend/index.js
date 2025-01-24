@@ -25,7 +25,6 @@ connectCloudinary();
 app.use(cookieParser());
 //cors
 app.use(cors({
-    origin: allowedOrigins, // Allow only specific origins
     credentials: true, // Allow cookies and other credentials
 }));
 
