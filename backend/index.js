@@ -36,7 +36,5 @@ app.use("/api/cart",cartRouter);
 app.use("/api/order",orderRouter);
 
 
-app.listen(PORT,()=>{
-    console.log("server started")
-})
+module.exports = app;
 
