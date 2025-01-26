@@ -1,143 +1,117 @@
 const express = require('express');
 const orderModel = require('../models/orderModel');
 const userModel = require('../models/userModel');
-
 const Stripe = require('stripe');
 
-// global variables
-const currency = 'inr'
-const deliveryCharge = 10
+// Global variables
+const currency = 'inr';
+const deliveryCharge = 10;
 
+// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// code method 
+// COD Order Placement
+const placeOrder = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { items, amount, address } = req.body;
 
-const placeOrder =async(req,res)=> {
-  try {
+        const orderData = {
+            userId,
+            items,
+            address,
+            amount: amount + deliveryCharge,
+            PaymentMethod: 'COD',
+            payment: false,
+            date: Date.now(),
+        };
 
-    const user =req.user;
-    const {items,amount,address} = req.body;
-    
+        const newOrder = new orderModel(orderData);
+        await newOrder.save();
 
-    const userId = user.id;
+        await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-    const orderData ={
-        userId,
-        items,
-        address,
-        amount,
-        PaymentMethod:'COD',
-        payment:false,
-        date:Date.now(),
-
+        res.status(201).json({ success: true, message: 'Order placed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
+};
 
-    const newOrder = new orderModel(orderData);
-    await newOrder.save();
+// Stripe Order Placement
+const placeOrderstripe = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { items, amount, address } = req.body;
+        const { origin } = req.headers;
 
-    await userModel.findByIdAndUpdate(userId,{cartData: {}});
+        const orderData = {
+            userId,
+            items,
+            address,
+            amount,
+            PaymentMethod: 'Stripe',
+            payment: false,
+            date: Date.now(),
+        };
 
-    res.json({success:true,message:"order placed"});
+        const newOrder = new orderModel(orderData);
+        await newOrder.save();
 
+        const line_items = items.map((item) => ({
+            price_data: {
+                currency: currency,
+                product_data: { name: item.name },
+                unit_amount: item.price * 100,
+            },
+            quantity: item.quantity,
+        }));
 
+        line_items.push({
+            price_data: {
+                currency: currency,
+                product_data: { name: 'Delivery charge' },
+                unit_amount: deliveryCharge * 100,
+            },
+            quantity: 1,
+        });
 
-  }
-  catch(error){
-    res.json({success:false,message:error.message});
-  }
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
+            cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
+            line_items,
+            mode: 'payment',
+        });
 
-}
-
-// stripe method
-
-const  placeOrderstripe = async(req,res)=>{
-try{
-    const user =req.user;
-    const userId = user.id;
-    const {items,amount,address} = req.body;
-    const {origin}=req.headers;
-
-  const orderData ={
-        userId,
-        items,
-        address,
-        amount,
-        PaymentMethod:'Stripe',
-        payment:false,
-        date:Date.now(),
-
+        res.status(200).json({ success: true, session_url: session.url });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
-    const newOrder = new orderModel(orderData);
-    await newOrder.save();
+};
 
-    const line_items = items.map((item)=>({
-        price_data: {
-            currency:currency,
-            product_data : {
-                name:item.name
-            },
-            unit_amount:item.price*100 
-        },
-        quantity:item.quantity
-    }))
+// User Order Data
+const userOrders = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orders = await orderModel.find({ userId }).lean();
 
-    line_items.push({
-        price_data: {
-            currency:currency,
-            product_data : {
-                name:"delivery charge"
-            },
-            unit_amount:deliveryCharge*100 
-        },
-        quantity:1
+        if (!orders.length) {
+            return res.status(404).json({ success: false, message: 'No orders found' });
+        }
 
-    })
-const session = await stripe.checkout.sessions.create({
-    success_url:`${origin}/verify?success=true&orderId=${newOrder._id}`,
-    cancel_url:`${origin}/verfiy?success=false&orderId=${
-        newOrder._id
-    }`,
+        res.status(200).json({ success: true, orders });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+};
 
-    line_items,
-    mode:'payment',
-})
-res.json({success:true,session_url:session.url})
-
-}
-catch(error){
-    res.json({success:false,message:error.message});
-}
-}
-
-// razorpay
-
-const placeOrderRazorpay = async(req,res)=>{
-
-}
-
-// user order data 
-
-const userOrders = async(req,res)=> {
-
-      try {
-      
-        const user =req.user;
-        const userId= user.id;
-        console.log(userId)
-        const orders = await orderModel.find({userId:userId});
-        console.log(orders);
-        res.json ({success:true,orders});
-
-
-      }
-      catch(error){
-        res.json({success:false,message:error.message});
-      }
-}
-
+// Export controllers
 module.exports = {
-
-    placeOrder,placeOrderstripe,
-    placeOrderRazorpay,userOrders
-
-}
+    placeOrder,
+    placeOrderstripe,
+    placeOrderRazorpay: async (req, res) => {}, // Razorpay integration placeholder
+    userOrders,
+};
