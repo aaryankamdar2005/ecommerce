@@ -30,6 +30,9 @@ app.use(cors({
 }));
 
 // api endpoints 
+app.get("/",(req,res)=>{
+    res.send("working ");
+})
 app.use("/api/user",router);
 app.use("/api/product",productRouter);
 app.use("/api/cart",cartRouter);
@@ -38,9 +41,9 @@ app.use("/api/order",orderRouter);
 
 
 
-module.exports = app;
 
-// app.listen(PORT,()=>{
-//     console.log("server started");
-// })
+
+app.listen(PORT,()=>{
+    console.log("server started");
+})
 
