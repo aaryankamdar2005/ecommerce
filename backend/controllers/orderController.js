@@ -1,117 +1,143 @@
 const express = require('express');
 const orderModel = require('../models/orderModel');
 const userModel = require('../models/userModel');
+
 const Stripe = require('stripe');
 
-// Global variables
-const currency = 'inr';
-const deliveryCharge = 10;
+// global variables
+const currency = 'inr'
+const deliveryCharge = 10
 
-// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// COD Order Placement
-const placeOrder = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { items, amount, address } = req.body;
+// code method 
 
-        const orderData = {
-            userId,
-            items,
-            address,
-            amount: amount + deliveryCharge,
-            PaymentMethod: 'COD',
-            payment: false,
-            date: Date.now(),
-        };
+const placeOrder =async(req,res)=> {
+  try {
 
-        const newOrder = new orderModel(orderData);
-        await newOrder.save();
+    const user =req.user;
+    const {items,amount,address} = req.body;
+    
 
-        await userModel.findByIdAndUpdate(userId, { cartData: {} });
+    const userId = user.id;
 
-        res.status(201).json({ success: true, message: 'Order placed successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    const orderData ={
+        userId,
+        items,
+        address,
+        amount,
+        PaymentMethod:'COD',
+        payment:false,
+        date:Date.now(),
+
     }
-};
 
-// Stripe Order Placement
-const placeOrderstripe = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { items, amount, address } = req.body;
-        const { origin } = req.headers;
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
 
-        const orderData = {
-            userId,
-            items,
-            address,
-            amount,
-            PaymentMethod: 'Stripe',
-            payment: false,
-            date: Date.now(),
-        };
+    await userModel.findByIdAndUpdate(userId,{cartData: {}});
 
-        const newOrder = new orderModel(orderData);
-        await newOrder.save();
+    res.json({success:true,message:"order placed"});
 
-        const line_items = items.map((item) => ({
-            price_data: {
-                currency: currency,
-                product_data: { name: item.name },
-                unit_amount: item.price * 100,
+
+
+  }
+  catch(error){
+    res.json({success:false,message:error.message});
+  }
+
+}
+
+// stripe method
+
+const  placeOrderstripe = async(req,res)=>{
+try{
+    const user =req.user;
+    const userId = user.id;
+    const {items,amount,address} = req.body;
+    const {origin}=req.headers;
+
+  const orderData ={
+        userId,
+        items,
+        address,
+        amount,
+        PaymentMethod:'Stripe',
+        payment:false,
+        date:Date.now(),
+
+    }
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
+
+    const line_items = items.map((item)=>({
+        price_data: {
+            currency:currency,
+            product_data : {
+                name:item.name
             },
-            quantity: item.quantity,
-        }));
+            unit_amount:item.price*100 
+        },
+        quantity:item.quantity
+    }))
 
-        line_items.push({
-            price_data: {
-                currency: currency,
-                product_data: { name: 'Delivery charge' },
-                unit_amount: deliveryCharge * 100,
+    line_items.push({
+        price_data: {
+            currency:currency,
+            product_data : {
+                name:"delivery charge"
             },
-            quantity: 1,
-        });
+            unit_amount:deliveryCharge*100 
+        },
+        quantity:1
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
-            cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
-            line_items,
-            mode: 'payment',
-        });
+    })
+const session = await stripe.checkout.sessions.create({
+    success_url:`${origin}/verify?success=true&orderId=${newOrder._id}`,
+    cancel_url:`${origin}/verfiy?success=false&orderId=${
+        newOrder._id
+    }`,
 
-        res.status(200).json({ success: true, session_url: session.url });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
-    }
-};
+    line_items,
+    mode:'payment',
+})
+res.json({success:true,session_url:session.url})
 
-// User Order Data
-const userOrders = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const orders = await orderModel.find({ userId }).lean();
+}
+catch(error){
+    res.json({success:false,message:error.message});
+}
+}
 
-        if (!orders.length) {
-            return res.status(404).json({ success: false, message: 'No orders found' });
-        }
+// razorpay
 
-        res.status(200).json({ success: true, orders });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
-    }
-};
+const placeOrderRazorpay = async(req,res)=>{
 
-// Export controllers
+}
+
+// user order data 
+
+const userOrders = async(req,res)=> {
+
+      try {
+      
+        const user =req.user;
+        const userId= user.id;
+        console.log(userId)
+        const orders = await orderModel.find({userId:userId});
+        console.log(orders);
+        res.json ({success:true,orders});
+
+
+      }
+      catch(error){
+        res.json({success:false,message:error.message});
+      }
+}
+
 module.exports = {
-    placeOrder,
-    placeOrderstripe,
-    placeOrderRazorpay: async (req, res) => {}, // Razorpay integration placeholder
-    userOrders,
-};
+
+    placeOrder,placeOrderstripe,
+    placeOrderRazorpay,userOrders
+
+}

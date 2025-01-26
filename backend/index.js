@@ -25,6 +25,7 @@ connectCloudinary();
 app.use(cookieParser());
 //cors
 app.use(cors({
+    origin:allowedOrigins,
     credentials: true, // Allow cookies and other credentials
 }));
 
@@ -36,5 +37,10 @@ app.use("/api/cart",cartRouter);
 app.use("/api/order",orderRouter);
 
 
+
 module.exports = app;
+
+// app.listen(PORT,()=>{
+//     console.log("server started");
+// })
 
