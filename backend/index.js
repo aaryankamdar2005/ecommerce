@@ -25,7 +25,7 @@ connectCloudinary();
 app.use(cookieParser());
 //cors
 app.use(cors({
-    origin:allowedOrigins,
+    origin:process.env.FRONTEND_URL,
     credentials: true, // Allow cookies and other credentials
 }));
 
