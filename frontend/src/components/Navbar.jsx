@@ -2,30 +2,28 @@ import React, { useState, useContext, useEffect } from 'react';
 import { assets } from '../assets/frontend_assets/assets.js';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { shopContext } from '../context/shopContext.jsx';
-import Cookies from 'js-cookie';
 
 function Navbar() {
   const [visible, setVisible] = useState(false);
   const {
     getCartCount,
     setCartItems,
-    cookieToken,
-    setCookieToken,
+    token,
+    setToken,
   } = useContext(shopContext);
 
   const navigate = useNavigate();
 
- 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    if (storedToken && !cookieToken) {
-      setCookieToken(storedToken);
+    if (storedToken && !token) {
+      setToken(storedToken);
     }
-  }, [cookieToken, setCookieToken]);
+  }, [token, setToken]);
 
   const logout = () => {
     localStorage.removeItem('token'); 
-    setCookieToken(null); 
+    setToken(null); 
     setCartItems({});
     navigate('/login');
   };
@@ -58,7 +56,7 @@ function Navbar() {
           <Link to="/login">
             <img
               onClick={() => {
-                if (!cookieToken) navigate('/login');
+                if (!token) navigate('/login');
               }}
               src={assets.profile_icon}
               className="w-5 cursor-progress"
@@ -66,7 +64,7 @@ function Navbar() {
           </Link>
 
           <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4">
-            {cookieToken && (
+            {token && (
               <div className="flex flex-col bg-slate-50 gap-2 w-36 py-3 px-5">
                 <p>My Profile</p>
                 <p onClick={() => navigate('/orders')}>Orders</p>
