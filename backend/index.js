@@ -9,7 +9,7 @@ const productRouter = require('./routes/productRoutes');
 const cookieParser = require('cookie-parser');
 const cartRouter = require('./routes/cartRoutes');
 const orderRouter = require('./routes/orderRoutes');
-const allowedOrigins = ['http://localhost:5173']; // Add your frontend URL here
+const allowedOrigins = ['http://localhost:5173','https://ecommerce-4t9k.vercel.app']; // Add your frontend URL here
 
 
 
