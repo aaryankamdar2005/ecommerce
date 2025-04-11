@@ -22,7 +22,7 @@ if(!user){
 const isMatch = await bcrypt.compare(password,user.password);
 if(isMatch){
   const token = createToken(user._id);
-  res.cookie("uid",token);
+  
  
   res.json({success:true,token});
 }
