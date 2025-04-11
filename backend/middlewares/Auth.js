@@ -1,33 +1,27 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 
-const jwt  = require('jsonwebtoken');
+const authUser = async (req, res, next) => {
+    const authHeader = req.headers['authorization'];
 
-const authUser =async (req,res,next)=> {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ success: false, message: "Authorization header missing or malformed" });
+    }
 
-    const token =req.cookies?.uid;
-    
-if(!token) {
-    return res.json({success:false,message:"kindly login"});
-}
-try { 
-    const isValid  = jwt.verify(token,process.env.SECRET_KEY);
-    
-if(!isValid) {
-    return res.json({success:false,message:"invalid credentials"});
-}
+    const token = authHeader.split(' ')[1]; // Extract token from 'Bearer <token>'
 
-req.user = isValid;
+    try {
+        const isValid = jwt.verify(token, process.env.SECRET_KEY);
 
-next();
+        if (!isValid) {
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
 
+        req.user = isValid;
+        next();
+    } catch (error) {
+        return res.status(401).json({ success: false, message: error.message });
+    }
+};
 
-}
-catch(error) {
-    return res.json({success:false,message:error.message});
-
-
-}
-
-}
-
-module.exports=authUser;
+module.exports = authUser;
